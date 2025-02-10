@@ -1,0 +1,211 @@
+/* Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f1f1f1;
+  color: #333;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100%;
+  background-color: #23282d;
+  color: #fff;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.sidebar h1 {
+  font-size: 20px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.sidebar nav a {
+  display: block;
+  color: #b6b6b6;
+  text-decoration: none;
+  padding: 10px 15px;
+  margin-bottom: 5px;
+  border-radius: 3px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.sidebar nav a:hover {
+  background-color: #0073aa;
+  color: #fff;
+}
+
+/* Main Content */
+.main-content {
+  margin-left: 260px; /* Sidebar width + margin */
+  padding: 20px;
+}
+
+/* Headings */
+header h2 {
+  margin-bottom: 20px;
+  color: #23282d;
+}
+
+/* Forms */
+form {
+  background: #fff;
+  padding: 20px;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #23282d;
+}
+
+form input[type="text"],
+form input[type="password"],
+form input[type="file"],
+form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccd0d4;
+  border-radius: 3px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #333;
+}
+
+form button {
+  background-color: #0073aa;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+form button:hover {
+  background-color: #006799;
+}
+
+/* Tables for Dashboard Lists */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid #ccd0d4;
+}
+
+table th,
+table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ccd0d4;
+}
+
+table th {
+  background-color: #f1f1f1;
+  font-weight: bold;
+}
+
+table tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* Image Upload and Preview */
+.image-upload {
+  margin-bottom: 15px;
+}
+
+.image-upload input[type="file"] {
+  display: none;
+}
+
+.image-upload label {
+  display: inline-block;
+  background-color: #0073aa;
+  color: #fff;
+  padding: 8px 15px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.image-upload label:hover {
+  background-color: #006799;
+}
+
+.image-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.image-preview div {
+  position: relative;
+}
+
+.image-preview img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid #ccd0d4;
+}
+
+/* Remove image button (positioned on each preview image) */
+.image-preview .remove-image {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #d63638;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+  }
+  .main-content {
+    margin-left: 220px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+  .main-content {
+    margin-left: 0;
+  }
+}
+

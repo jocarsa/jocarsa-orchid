@@ -62,8 +62,6 @@ header::before {
     display: flex;
     justify-content: center;
     gap: 20px;
-}
-.menu {
     position: relative;
     z-index: 10; /* Ensure this is higher than other elements */
 }
@@ -237,5 +235,33 @@ main {
 
 .project-link a:hover {
     background: linear-gradient(135deg, #000DFF 0%, #6B73FF 100%);
+}
+
+.menu .submenu {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+    z-index: 10;
+}
+
+.menu li:hover .submenu {
+    display: block;
+}
+
+.menu .submenu li {
+    margin: 0;
+    padding: 10px 20px;
+}
+
+.menu .submenu li a {
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.menu .submenu li a:hover {
+    color: #0073aa;
 }
 

@@ -42,10 +42,38 @@ function get_site_data() {
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
+function get_categories() {
+    global $db;
+    $stmt = $db->query("SELECT * FROM categories ORDER BY parent_id, name");
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function get_category_by_slug($slug) {
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM categories WHERE slug = ?");
+    $stmt->execute([$slug]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+function get_subcategories($parent_id) {
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM categories WHERE parent_id = ?");
+    $stmt->execute([$parent_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function get_projects_by_category($category_id) {
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM projects WHERE category_id = ?");
+    $stmt->execute([$category_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 $action = $_GET['action'] ?? 'list';
 $projects = get_projects();
 $pages = get_pages();
 $site_data = get_site_data();
+$categories = get_categories();
 
 if ($action === 'detail' && isset($_GET['id'])) {
     $project_id = $_GET['id'];
@@ -55,6 +83,12 @@ if ($action === 'detail' && isset($_GET['id'])) {
 if ($action === 'page' && isset($_GET['slug'])) {
     $page_slug = $_GET['slug'];
     $page = get_page($page_slug);
+}
+
+if ($action === 'category' && isset($_GET['slug'])) {
+    $category_slug = $_GET['slug'];
+    $category = get_category_by_slug($category_slug);
+    $projects = get_projects_by_category($category['id']);
 }
 ?>
 <!DOCTYPE html>
@@ -76,6 +110,18 @@ if ($action === 'page' && isset($_GET['slug'])) {
         <nav>
             <ul class="menu">
                 <li><a href="index.php">Inicio</a></li>
+                <?php foreach ($categories as $category): ?>
+                    <li>
+                        <a href="index.php?action=category&slug=<?php echo htmlspecialchars($category['slug']); ?>"><?php echo htmlspecialchars($category['name']); ?></a>
+                        <?php if (get_subcategories($category['id'])): ?>
+                            <ul class="submenu">
+                                <?php foreach (get_subcategories($category['id']) as $subcategory): ?>
+                                    <li><a href="index.php?action=category&slug=<?php echo htmlspecialchars($subcategory['slug']); ?>"><?php echo htmlspecialchars($subcategory['name']); ?></a></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
                 <?php foreach ($pages as $page): ?>
                     <li><a href="index.php?action=page&slug=<?php echo htmlspecialchars($page['slug']); ?>"><?php echo htmlspecialchars($page['title']); ?></a></li>
                 <?php endforeach; ?>

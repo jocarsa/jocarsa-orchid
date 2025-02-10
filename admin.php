@@ -24,7 +24,9 @@ $db->exec("
         video_url TEXT,
         project_url TEXT,
         github_url TEXT,
-        live_url TEXT
+        live_url TEXT,
+        category_id INTEGER,
+        FOREIGN KEY (category_id) REFERENCES categories(id)
     );
 ");
 
@@ -43,6 +45,16 @@ $db->exec("
         name TEXT NOT NULL,
         photo TEXT NOT NULL,
         description TEXT NOT NULL
+    );
+");
+
+$db->exec("
+    CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        slug TEXT NOT NULL UNIQUE,
+        parent_id INTEGER,
+        FOREIGN KEY (parent_id) REFERENCES categories(id)
     );
 ");
 
@@ -96,16 +108,16 @@ function get_project($id) {
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-function add_project($title, $description, $images, $video_url, $project_url, $github_url, $live_url) {
+function add_project($title, $description, $images, $video_url, $project_url, $github_url, $live_url, $category_id) {
     global $db;
-    $stmt = $db->prepare("INSERT INTO projects (title, description, images, video_url, project_url, github_url, live_url) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    return $stmt->execute([$title, $description, $images, $video_url, $project_url, $github_url, $live_url]);
+    $stmt = $db->prepare("INSERT INTO projects (title, description, images, video_url, project_url, github_url, live_url, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    return $stmt->execute([$title, $description, $images, $video_url, $project_url, $github_url, $live_url, $category_id]);
 }
 
-function update_project($id, $title, $description, $images, $video_url, $project_url, $github_url, $live_url) {
+function update_project($id, $title, $description, $images, $video_url, $project_url, $github_url, $live_url, $category_id) {
     global $db;
-    $stmt = $db->prepare("UPDATE projects SET title = ?, description = ?, images = ?, video_url = ?, project_url = ?, github_url = ?, live_url = ? WHERE id = ?");
-    return $stmt->execute([$title, $description, $images, $video_url, $project_url, $github_url, $live_url, $id]);
+    $stmt = $db->prepare("UPDATE projects SET title = ?, description = ?, images = ?, video_url = ?, project_url = ?, github_url = ?, live_url = ?, category_id = ? WHERE id = ?");
+    return $stmt->execute([$title, $description, $images, $video_url, $project_url, $github_url, $live_url, $category_id, $id]);
 }
 
 function delete_project($id) {
@@ -157,6 +169,37 @@ function update_site_data($name, $photo, $description) {
     return $stmt->execute([$name, $photo, $description]);
 }
 
+function get_categories() {
+    global $db;
+    $stmt = $db->query("SELECT * FROM categories ORDER BY parent_id, name");
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function get_category($id) {
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM categories WHERE id = ?");
+    $stmt->execute([$id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+function add_category($name, $slug, $parent_id = null) {
+    global $db;
+    $stmt = $db->prepare("INSERT INTO categories (name, slug, parent_id) VALUES (?, ?, ?)");
+    return $stmt->execute([$name, $slug, $parent_id]);
+}
+
+function update_category($id, $name, $slug, $parent_id = null) {
+    global $db;
+    $stmt = $db->prepare("UPDATE categories SET name = ?, slug = ?, parent_id = ? WHERE id = ?");
+    return $stmt->execute([$name, $slug, $parent_id, $id]);
+}
+
+function delete_category($id) {
+    global $db;
+    $stmt = $db->prepare("DELETE FROM categories WHERE id = ?");
+    return $stmt->execute([$id]);
+}
+
 // Manejo de acciones
 $action = $_GET['action'] ?? 'login';
 
@@ -191,6 +234,7 @@ if ($action === 'add_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $project_url = $_POST['project_url'];
     $github_url = $_POST['github_url'];
     $live_url = $_POST['live_url'];
+    $category_id = $_POST['category_id'] ?? null;
 
     // Guardar imágenes
     $target_dir = 'uploads/';
@@ -199,7 +243,7 @@ if ($action === 'add_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         move_uploaded_file($tmp_name, $target_file);
     }
 
-    add_project($title, $description, $images, $video_url, $project_url, $github_url, $live_url);
+    add_project($title, $description, $images, $video_url, $project_url, $github_url, $live_url, $category_id);
     header('Location: admin.php?action=dashboard');
     exit;
 }
@@ -213,6 +257,7 @@ if ($action === 'edit_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $project_url = $_POST['project_url'];
     $github_url = $_POST['github_url'];
     $live_url = $_POST['live_url'];
+    $category_id = $_POST['category_id'] ?? null;
 
     // Guardar imágenes
     $target_dir = 'uploads/';
@@ -221,7 +266,7 @@ if ($action === 'edit_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         move_uploaded_file($tmp_name, $target_file);
     }
 
-    update_project($id, $title, $description, $images, $video_url, $project_url, $github_url, $live_url);
+    update_project($id, $title, $description, $images, $video_url, $project_url, $github_url, $live_url, $category_id);
     header('Location: admin.php?action=dashboard');
     exit;
 }
@@ -278,11 +323,39 @@ if ($action === 'edit_site' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+if ($action === 'add_category' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = $_POST['name'];
+    $slug = $_POST['slug'];
+    $parent_id = $_POST['parent_id'] ?? null;
+    add_category($name, $slug, $parent_id);
+    header('Location: admin.php?action=dashboard');
+    exit;
+}
+
+if ($action === 'edit_category' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = $_POST['id'];
+    $name = $_POST['name'];
+    $slug = $_POST['slug'];
+    $parent_id = $_POST['parent_id'] ?? null;
+    update_category($id, $name, $slug, $parent_id);
+    header('Location: admin.php?action=dashboard');
+    exit;
+}
+
+if ($action === 'delete_category' && isset($_GET['id'])) {
+    $id = $_GET['id'];
+    delete_category($id);
+    header('Location: admin.php?action=dashboard');
+    exit;
+}
+
 $projects = get_projects();
 $pages = get_pages();
 $site_data = get_site_data();
+$categories = get_categories();
 $edit_project = null;
 $edit_page = null;
+$edit_category = null;
 
 if (isset($_GET['edit_project'])) {
     $id = $_GET['edit_project'];
@@ -292,6 +365,11 @@ if (isset($_GET['edit_project'])) {
 if (isset($_GET['edit_page'])) {
     $id = $_GET['edit_page'];
     $edit_page = get_page($id);
+}
+
+if (isset($_GET['edit_category'])) {
+    $id = $_GET['edit_category'];
+    $edit_category = get_category($id);
 }
 ?>
 <!DOCTYPE html>
@@ -311,6 +389,7 @@ if (isset($_GET['edit_page'])) {
                 <a href="admin.php?action=dashboard">Dashboard</a>
                 <a href="admin.php?action=add_project">Añadir Proyecto</a>
                 <a href="admin.php?action=add_page">Añadir Página</a>
+                <a href="admin.php?action=add_category">Añadir Categoría</a>
                 <a href="admin.php?action=edit_site">Editar Sitio</a>
                 <a href="admin.php?action=logout">Cerrar Sesión</a>
             <?php endif; ?>
@@ -379,6 +458,32 @@ if (isset($_GET['edit_page'])) {
                     </tbody>
                 </table>
             </div>
+            <div class="categories-list">
+                <h2>Lista de Categorías</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Slug</th>
+                            <th>Categoría Padre</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($categories as $category): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($category['name']); ?></td>
+                                <td><?php echo htmlspecialchars($category['slug']); ?></td>
+                                <td><?php echo htmlspecialchars($category['parent_id'] ? get_category($category['parent_id'])['name'] : 'Ninguna'); ?></td>
+                                <td>
+                                    <a href="admin.php?action=edit_category&id=<?php echo $category['id']; ?>">Editar</a> |
+                                    <a href="admin.php?action=delete_category&id=<?php echo $category['id']; ?>" onclick="return confirm('¿Estás seguro de que quieres eliminar esta categoría?');">Eliminar</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php elseif ($action === 'add_project' || $action === 'edit_project'): ?>
             <header>
                 <h2><?php echo $edit_project ? 'Editar Proyecto' : 'Añadir Proyecto'; ?></h2>
@@ -391,6 +496,13 @@ if (isset($_GET['edit_page'])) {
                 <input type="text" name="title" id="title" value="<?php echo htmlspecialchars($edit_project['title'] ?? ''); ?>" required>
                 <label for="description">Descripción</label>
                 <textarea name="description" id="description" rows="4" required><?php echo htmlspecialchars($edit_project['description'] ?? ''); ?></textarea>
+                <label for="category_id">Categoría</label>
+                <select name="category_id" id="category_id">
+                    <option value="">Ninguna</option>
+                    <?php foreach ($categories as $category): ?>
+                        <option value="<?php echo $category['id']; ?>" <?php echo ($edit_project['category_id'] ?? null) == $category['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($category['name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
                 <label for="images">Imágenes</label>
                 <div class="image-upload">
                     <input type="file" name="images[]" id="images" multiple accept="image/*">
@@ -432,6 +544,27 @@ if (isset($_GET['edit_page'])) {
                 <label for="slug">Slug</label>
                 <input type="text" name="slug" id="slug" value="<?php echo htmlspecialchars($edit_page['slug'] ?? ''); ?>" required>
                 <button type="submit"><?php echo $edit_page ? 'Actualizar Página' : 'Añadir Página'; ?></button>
+            </form>
+        <?php elseif ($action === 'add_category' || $action === 'edit_category'): ?>
+            <header>
+                <h2><?php echo $edit_category ? 'Editar Categoría' : 'Añadir Categoría'; ?></h2>
+            </header>
+            <form action="admin.php?action=<?php echo $edit_category ? 'edit_category' : 'add_category'; ?>" method="POST">
+                <?php if ($edit_category): ?>
+                    <input type="hidden" name="id" value="<?php echo $edit_category['id']; ?>">
+                <?php endif; ?>
+                <label for="name">Nombre</label>
+                <input type="text" name="name" id="name" value="<?php echo htmlspecialchars($edit_category['name'] ?? ''); ?>" required>
+                <label for="slug">Slug</label>
+                <input type="text" name="slug" id="slug" value="<?php echo htmlspecialchars($edit_category['slug'] ?? ''); ?>" required>
+                <label for="parent_id">Categoría Padre</label>
+                <select name="parent_id" id="parent_id">
+                    <option value="">Ninguna</option>
+                    <?php foreach ($categories as $category): ?>
+                        <option value="<?php echo $category['id']; ?>" <?php echo ($edit_category['parent_id'] ?? null) == $category['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($category['name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit"><?php echo $edit_category ? 'Actualizar Categoría' : 'Añadir Categoría'; ?></button>
             </form>
         <?php elseif ($action === 'edit_site'): ?>
             <header>
